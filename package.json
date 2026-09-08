@@ -1,0 +1,30 @@
+{
+  "name": "encurtador-de-url",
+  "version": "1.0.0",
+  "description": "Uma aplicação de encurtamento de URLs projetada com foco em escalabilidade e conceitos de sistemas distribuídos.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matheusdasilvaoliveira/encurtador-de-url.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/matheusdasilvaoliveira/encurtador-de-url/issues"
+  },
+  "homepage": "https://github.com/matheusdasilvaoliveira/encurtador-de-url#readme",
+  "dependencies": {
+    "express": "^5.2.1",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.4.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2"
+  }
+}

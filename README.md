@@ -16,8 +16,10 @@ Uma aplicação de encurtamento de URLs projetada com foco em escalabilidade e c
 ## 🚀 Como Executar Localmente
 1. Clone este repositório.
 2. Certifique-se de ter o Docker Desktop instalado.
-3. Na raiz do projeto, execute o comando: `docker-compose up --build`
-4. A API estará disponível em `http://localhost:5000`.
+3. Crie o arquivo `.env` a partir do modelo: `copy .env.example .env` (PowerShell: `Copy-Item .env.example .env`).
+4. Ajuste as credenciais no `.env`, se necessário.
+5. Na raiz do projeto, execute o comando: `docker-compose up --build`
+6. A API estará disponível em `http://localhost:5000`.
 
 ---
 

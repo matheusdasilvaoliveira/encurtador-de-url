@@ -1,27 +1,38 @@
 import express, { Request, Response } from 'express';
 import { Pool } from 'pg';
+import { nanoid } from 'nanoid';
 
-// 1. Inicialização do aplicativo Express
 const app = express();
 
-// Middleware para que o Express consiga ler JSON no corpo das requisições (req.body)
 app.use(express.json());
 
-// 2. Configuração do Banco de Dados PostgreSQL
-// O Pool gerencia várias conexões simultâneas de forma eficiente.
-// A DATABASE_URL vem daquela variável de ambiente que configuramos no docker-compose.yml
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-// Testa a conexão com o banco logo que a API sobe
+const criarTabelaSQL = `
+  CREATE TABLE IF NOT EXISTS urls (
+    id SERIAL PRIMARY KEY,
+    original_url TEXT NOT NULL,
+    short_code VARCHAR(6) UNIQUE NOT NULL,
+    hits INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
 db.connect()
-  .then(() => console.log('📦 Conectado ao PostgreSQL com sucesso!'))
+  .then(async (client) => {
+    console.log('📦 Conectado ao PostgreSQL com sucesso!');
+    
+    await client.query(criarTabelaSQL);
+    console.log('✅ Tabela "urls" verificada/criada e pronta para uso!');
+    
+    client.release();
+  })
   .catch((err) => console.error('❌ Erro ao conectar no banco:', err));
 
-
 // ==========================================
-// 3. DEFINIÇÃO DAS ROTAS DA APLICAÇÃO
+// DEFINIÇÃO DAS ROTAS DA APLICAÇÃO
 // ==========================================
 
 /**
@@ -36,39 +47,73 @@ app.post('/encurtar', async (req: Request, res: Response) => {
       return res.status(400).json({ erro: 'A URL original é obrigatória.' });
     }
 
-    // TODO: 1. Gerar um código aleatório de 6 caracteres únicos.
-    // TODO: 2. Salvar no banco de dados (original_url, código_curto).
-    // TODO: 3. Retornar o link encurtado para o usuário (ex: http://localhost:5000/abc123).
+    // Verifica se a URL já existe no banco de dados
+    const checkQuery = 'SELECT short_code FROM urls WHERE original_url = $1';
+    const { rows } = await db.query(checkQuery, [original_url]);
 
-    res.status(201).json({ mensagem: 'Rota de encurtamento ainda em construção!' });
+    // Se já existir, devolvemos o link encurtado que já está no banco
+    if (rows.length > 0) {
+      const existingCode = rows[0].short_code;
+      return res.status(200).json({
+        original_url,
+        short_code: existingCode,
+        link_curto: `http://localhost:5000/${existingCode}`,
+        mensagem: 'URL já estava encurtada no nosso sistema!'
+      });
+    }
+
+    const short_code = nanoid(6);
+
+    const query = 'INSERT INTO urls (original_url, short_code) VALUES ($1, $2) RETURNING *';
+    const values = [original_url, short_code];
+
+    await db.query(query, values);
+
+    const link_curto = `http://localhost:5000/${short_code}`;
+
+    res.status(201).json({
+      original_url,
+      short_code,
+      link_curto
+    });
+
   } catch (error) {
-    res.status(500).json({ erro: 'Erro interno no servidor' });
+    console.error('Erro ao encurtar URL:', error);
+    res.status(500).json({ erro: 'Erro interno no servidor ao encurtar a URL' });
   }
 });
 
-/**
- * Rota 2: Redirecionamento e Contador de Acessos
- * Requisito: Ao acessar a URL encurtada, redireciona o usuário para a original.
- * Requisito: O sistema deve registrar quantas vezes cada link curto foi acessado.
- */
 app.get('/:codigo', async (req: Request, res: Response) => {
   try {
     const { codigo } = req.params;
 
-    // TODO: 1. Buscar no banco de dados a URL original associada a esse 'codigo'.
-    // TODO: 2. Se não existir, retornar erro 404 (Não Encontrado).
-    // TODO: 3. Se existir, incrementar o contador de cliques (hits) no banco.
-    // TODO: 4. Fazer o redirecionamento HTTP (código 301 ou 302) para a URL original.
+    // A Mágica do Sênior: UPDATE com RETURNING
+    // Nós incrementamos o contador E buscamos a URL original na mesma operação no banco!
+    const query = `
+      UPDATE urls 
+      SET hits = hits + 1 
+      WHERE short_code = $1 
+      RETURNING original_url;
+    `;
+    
+    const { rows } = await db.query(query, [codigo]);
 
-    res.status(200).json({ mensagem: `Você acessou o código: ${codigo}` });
+    if (rows.length === 0) {
+      return res.status(404).json({ erro: 'URL não encontrada ou expirada.' });
+    }
+
+    const originalUrl = rows[0].original_url;
+
+    res.redirect(301, originalUrl);
+
   } catch (error) {
+    console.error('Erro ao redirecionar:', error);
     res.status(500).json({ erro: 'Erro interno no servidor' });
   }
 });
 
-
 // ==========================================
-// 4. INICIALIZAÇÃO DO SERVIDOR
+// INICIALIZAÇÃO DO SERVIDOR
 // ==========================================
 const PORT = process.env.PORT || 5000;
 

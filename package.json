@@ -19,6 +19,7 @@
   "homepage": "https://github.com/matheusdasilvaoliveira/encurtador-de-url#readme",
   "dependencies": {
     "express": "^5.2.1",
+    "nanoid": "^6.0.1",
     "pg": "^8.23.0"
   },
   "devDependencies": {

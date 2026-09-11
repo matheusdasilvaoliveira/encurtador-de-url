@@ -29,13 +29,13 @@ O design desta aplicação envolve avaliar cenários críticos de falha e pico d
 
 ### 1. O que acontece se o banco de dados cair?
 Se a rede entre a nossa API e o banco de dados cair, ocorre uma Partição. Diante disso, o sistema pode adotar diferentes estratégias:
-* **Opção Consistente:** A API atua para proteger os dados e diz: "Sistema indisponível". Nesse caso, o redirecionamento de URLs falharia até o banco voltar.
+* **[Escolhida] Opção Consistente:** A API atua para proteger os dados e diz: "Sistema indisponível - Erro 500". Nesse caso, o redirecionamento de URLs falharia até o banco voltar.
 * **Opção de Disponiblidade:** A API libera o acesso e anota a operação para avisar o banco depois. Na prática do nosso encurtador, poderíamos manter as URLs mais acessadas em memória (cache). Assim, o redirecionamento continuaria funcionando para os usuários, garantindo a continuidade do serviço em caso de falhas.
 
 ### 2. O que acontece se 10.000 pessoas clicarem no mesmo link simultaneamente?
 Um evento com 10.000 cliques simultâneos exige que a arquitetura suporte acesso simultâneo massivo, o que significa que uma vazão alta é essencial. 
 * Se a nossa infraestrutura não estiver preparada, a latência (o tempo de resposta de uma operação) aumentará drasticamente. 
-* Para suportar essa carga, o sistema precisa de escalabilidade, que é a capacidade de se adaptar e manter ou melhorar a performance à medida que a carga aumenta.
+* Para suportar essa carga, o sistema precisa de escalabilidade, se mantendo ou melhorando a performance à medida que a carga aumenta.
 * **Estratégias de mitigação:** 
-  1. Poderíamos aplicar a escalabilidade vertical, aumentando os recursos de uma única máquina (CPU, RAM) onde a API e o banco estão hospedados.
-  2. A longo prazo, poderíamos evoluir para um sistema distribuído mais robusto, com o objetivo de distribuir a carga entre várias máquinas e melhorar a experiência do usuário.
+  1. Poderíamos aplicar a escalabilidade vertical, aumentando os recursos de uma única máquina virtual (CPU, RAM) onde a API e o banco estão hospedados.
+  2. A longo prazo, poderíamos evoluir para um sistema distribuído mais robusto, com o objetivo de distribuir a carga entre várias máquinas / containers e melhorar a experiência do usuário.
